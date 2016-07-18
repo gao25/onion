@@ -1,5 +1,5 @@
 var process = require('child_process');
-
+// git提交测试
 function nodeStart(nodename, callback){
   process.exec('forever stop '+nodename[0], function (error, stdout, stderr) {
     process.exec('forever start '+nodename[0], function (error, stdout, stderr) {
