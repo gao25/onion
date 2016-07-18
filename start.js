@@ -33,7 +33,6 @@ function hasModules(){
 }
 
 var process = require('child_process');
-
 function nodeStart(nodename, callback){
   process.exec('forever stop '+nodename[0], function (error, stdout, stderr) {
     process.exec('forever start '+nodename[0], function (error, stdout, stderr) {
