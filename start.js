@@ -1,3 +1,37 @@
+var fs = require('fs'),
+  nodeModules = ['sqlite3', 'juicer', 'stylus', 'gulp', 'gulp-minify-css', 'gulp-uglify', 'gulp-imagemin', 'imagemin-pngquant'],
+  nodeModulesState = true;
+
+fs.exists('./node_modules', function (state) {
+  if (state) {
+    hasModules();
+  } else {
+    nodeModulesState = false;
+    console.log('请先安装依赖模块：');
+    for (var i=0; i<nodeModules.length; i++) {
+      console.log('npm install '+nodeModules[i]);
+    }
+  }
+});
+
+function hasModules(){
+  if (nodeModules.length) {
+    var thisModule = nodeModules.shift();
+    fs.exists('./node_modules/'+thisModule, function (state) {
+      if (!state) {
+        if (nodeModulesState) {
+          console.log('请先安装依赖模块：');
+          nodeModulesState = false;
+        }
+        console.log('npm install '+thisModule);
+      }
+      hasModules();
+    });
+  } else {
+    if (nodeModulesState) eachNode();
+  }
+}
+
 var process = require('child_process');
 
 function nodeStart(nodename, callback){
@@ -14,8 +48,8 @@ function nodeStart(nodename, callback){
 }
 
 var nodeList = [
-  ['xinhuamm.js', '8601'],
-  ['xinhuaapp.js', '8602']
+  ['xinhuamm.js', '6801'],
+  ['xinhuaapp.js', '6802']
 ];
 
 function eachNode(){
@@ -24,4 +58,3 @@ function eachNode(){
     nodeStart(nodeThis, eachNode);
   }
 }
-eachNode();

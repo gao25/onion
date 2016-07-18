@@ -1,6 +1,6 @@
 exports.modfn = function(fileSource, callback) {
-  var modRegExp = /\{\#mod[\s]+([a-zA-Z]{1}[a-z0-9]*?)[\s]*\([\s]*(\{[\s\S]*?\})?[\s]*\)[\s]*\}/gi,
-    modRegExp2 = /\{\#mod[\s]+([a-zA-Z]{1}[a-z0-9]*?)[\s]*\([\s]*(\{[\s\S]*?\})?[\s]*\)[\s]*\}/i,
+  var modRegExp = /\{\{\#mod[\s]+([a-zA-Z]{1}[a-z0-9]*?)[\s]*\([\s]*(\{[\s\S]*?\})?[\s]*\)[\s]*\}\}/gi,
+    modRegExp2 = /\{\{\#mod[\s]+([a-zA-Z]{1}[a-z0-9]*?)[\s]*\([\s]*(\{[\s\S]*?\})?[\s]*\)[\s]*\}\}/i,
     modMatch = fileSource.match(modRegExp);
   if (modMatch) {
     function modEach(){
