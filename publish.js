@@ -4,6 +4,7 @@ var fs = require('fs'),
   folderArray = ['xinhuaapp'],
   fileArray = [],
   toPath = './publish/';
+  // a
 
 function getFileList(){
   if (folderArray.length) {
