@@ -1,4 +1,4 @@
-exports.fn = function(req, res, pathname) {
+exports.fn = function(req, res, pathname, ext) {
   var fs = require('fs'),
     filePath = hostPath + pathname;
   fs.stat(filePath, function (error, stats){
@@ -11,6 +11,7 @@ exports.fn = function(req, res, pathname) {
         } else {
           var stylus = require('stylus'),
             stylusPaths = [
+              commonPath,
               hostPath,
               filePath.substr(0, filePath.lastIndexOf('/') + 1)
             ];

@@ -2,6 +2,7 @@ exports.fn = function(dirname, port) {
   var http = require('http'),
     server = new http.Server();
   server.on('request', function(req, res) {
+    global.commonPath = __dirname + '/template/onion_common';
     global.hostPath = __dirname + '/template/'+dirname;
 
     var url = require('url');
@@ -22,10 +23,12 @@ exports.fn = function(dirname, port) {
     // 处理加载地址
     if (ext == 'html') {
       var routes = require('./routes/screen');
-    } else if (ext == 'css') {
-      var routes = require('./routes/style');
     } else if (ext == 'do') {
       var routes = require('./routes/api');
+    } else if (ext == 'css') {
+      var routes = require('./routes/style');
+    } else if (ext == 'js') {
+      var routes = require('./routes/script');
     } else {
       var routes = require('./routes/static');
     }
