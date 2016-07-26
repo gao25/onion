@@ -36,3 +36,26 @@ exports.modfn = function(fileSource, callback) {
     callback(fileSource);
   }
 };
+
+exports.apifn = function(fileSource, serverType, callback) {
+  var fs = require('fs'),
+    apiPath = hostPath + '/api/api.conf';
+  fs.stat(apiPath, function (error, stats){
+    if (error) {
+      callback({});
+    } else {
+      fs.readFile(apiPath, 'utf8', function (error, dataSource){
+        if (error) {
+          callback(fileSource);
+        } else {
+          var sourceData = JSON.parse(dataSource);
+          for (var key in sourceData) {
+            var re = new RegExp('\\$\\{\\{'+key+'\\}\\}', 'g');
+            fileSource = fileSource.replace(re, sourceData[key][serverType]);
+          }
+          callback(fileSource);
+        }
+      });
+    }
+  });
+};

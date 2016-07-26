@@ -1,37 +1,3 @@
-var fs = require('fs'),
-  nodeModules = ['sqlite3', 'juicer', 'stylus', 'gulp', 'gulp-minify-css', 'gulp-uglify', 'gulp-imagemin', 'imagemin-pngquant'],
-  nodeModulesState = true;
-
-fs.exists('./node_modules', function (state) {
-  if (state) {
-    hasModules();
-  } else {
-    nodeModulesState = false;
-    console.log('请先安装依赖模块：');
-    for (var i=0; i<nodeModules.length; i++) {
-      console.log('npm install '+nodeModules[i]);
-    }
-  }
-});
-
-function hasModules(){
-  if (nodeModules.length) {
-    var thisModule = nodeModules.shift();
-    fs.exists('./node_modules/'+thisModule, function (state) {
-      if (!state) {
-        if (nodeModulesState) {
-          console.log('请先安装依赖模块：');
-          nodeModulesState = false;
-        }
-        console.log('npm install '+thisModule);
-      }
-      hasModules();
-    });
-  } else {
-    if (nodeModulesState) eachNode();
-  }
-}
-
 var process = require('child_process');
 function nodeStart(nodename, callback){
   process.exec('forever stop start/'+nodename[0], function (error, stdout, stderr) {
@@ -50,7 +16,8 @@ var nodeList = [
   ['action.js', '6801'],
   ['system.js', '6802'],
   ['project.js', '6803'],
-  ['static.js', '6804']
+  ['static.js', '6804'],
+  ['orange.js', '6880']
 ];
 
 function eachNode(){
@@ -59,3 +26,4 @@ function eachNode(){
     nodeStart(nodeThis, eachNode);
   }
 }
+eachNode();

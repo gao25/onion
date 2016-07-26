@@ -29,6 +29,8 @@ exports.fn = function(dirname, port) {
       var routes = require('./routes/style');
     } else if (ext == 'js') {
       var routes = require('./routes/script');
+    } else if (ext == 'sprite') {
+      var routes = require('./routes/sprite');
     } else {
       var routes = require('./routes/static');
     }

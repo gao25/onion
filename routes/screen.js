@@ -14,39 +14,41 @@ exports.fn = function(req, res, pathname, ext) {
           var screenMatch = require('./screen_match');
           // mod 模块
           screenMatch.modfn(source, function(source){
-            var fileDataPath = hostPath + pathname.replace('.html', '.data');
-            // 模拟数据
-            fs.stat(fileDataPath, function (error, stats){
-              if (error) {
-                // 输出
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.end(source);
-              } else {
-                fs.readFile(fileDataPath, 'utf8', function (error, dataSource){
-                  if (error) {
-                    // nonthing
-                  } else {
-                    // 数据写入页面
-                    var sourceData = JSON.parse(dataSource),
-                      juicer = require('juicer');
-                    juicer.set({
-                      'tag::operationOpen': '{{@',
-                      'tag::operationClose': '}}',
-                      'tag::interpolateOpen': '${{',
-                      'tag::interpolateClose': '}}',
-                      'tag::noneencodeOpen': '$${{',
-                      'tag::noneencodeClose': '}}',
-                      'tag::commentOpen': '{{#',
-                      'tag::commentClose': '}}',
-                      'strip': false
-                    });
-                    source = juicer(source, sourceData);
-                  }
+            screenMatch.apifn(source, 'local', function(source){
+              var fileDataPath = hostPath + pathname.replace('.html', '.data');
+              // 模拟数据
+              fs.stat(fileDataPath, function (error, stats){
+                if (error) {
                   // 输出
                   res.writeHead(200, {'Content-Type': 'text/html'});
                   res.end(source);
-                });
-              }
+                } else {
+                  fs.readFile(fileDataPath, 'utf8', function (error, dataSource){
+                    if (error) {
+                      // nonthing
+                    } else {
+                      // 数据写入页面
+                      var sourceData = JSON.parse(dataSource),
+                        juicer = require('juicer');
+                      juicer.set({
+                        'tag::operationOpen': '{{@',
+                        'tag::operationClose': '}}',
+                        'tag::interpolateOpen': '${{',
+                        'tag::interpolateClose': '}}',
+                        'tag::noneencodeOpen': '$${{',
+                        'tag::noneencodeClose': '}}',
+                        'tag::commentOpen': '{{#',
+                        'tag::commentClose': '}}',
+                        'strip': false
+                      });
+                      source = juicer(source, sourceData);
+                    }
+                    // 输出
+                    res.writeHead(200, {'Content-Type': 'text/html'});
+                    res.end(source);
+                  });
+                }
+              });
             });
           });
         }
