@@ -3,18 +3,21 @@ exports.modfn = function(fileSource, callback) {
     modRegExp2 = /\{\{\#mod[\s]+([a-zA-Z]{1}[a-z0-9]*?)[\s]*\([\s]*(\{[\s\S]*?\})?[\s]*\)[\s]*\}\}/i,
     modMatch = fileSource.match(modRegExp);
   if (modMatch) {
+    var modArray = [];
     function modEach(){
       if (modMatch.length) {
         var newModMatch = modMatch.shift(),
           modExec = modRegExp2.exec(newModMatch),
           modName = modExec[1],
-          modData = modExec[2];
+          modData = modExec[2],
+          modPath = '/ui/'+modName+'/'+modName+'.mod';
         try {
-          var modNode = require(templatePath + '/ui/'+modName+'/'+modName+'.mod');
+          var modNode = require(templatePath + modPath);
         } catch(e) {
           var modNode = null;
         }
         if (modNode) {
+          modArray.push(modPath);
           if (modData) {
             modData = JSON.parse(modData);
           } else {
@@ -28,7 +31,7 @@ exports.modfn = function(fileSource, callback) {
           modEach();
         }
       } else {
-        callback(fileSource);
+        callback(fileSource, modArray);
       }
     }
     modEach();
@@ -42,7 +45,7 @@ exports.apifn = function(fileSource, serverType, callback) {
     apiPath = hostPath + '/api/api.conf';
   fs.stat(apiPath, function (error, stats){
     if (error) {
-      callback({});
+      callback(fileSource);
     } else {
       fs.readFile(apiPath, 'utf8', function (error, dataSource){
         if (error) {

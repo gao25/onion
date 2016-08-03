@@ -1,0 +1,20 @@
+{
+  "name": "onion",
+  "description": "onion",
+  "version": "1.0.0",
+  "devDependencies": {
+    "juicer": "*",
+    "stylus": "*",
+    "sprity": "*",
+    "gulp": "*",
+    "gulp-minify-css": "*",
+    "gulp-uglify": "*",
+    "gulp-imagemin": "*",
+    "imagemin-pngquant": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@10.0.0.210:bigfish/onion.git"
+  },
+  "readmeFilename": "README.md"
+}

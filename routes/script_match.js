@@ -1,9 +1,10 @@
-exports.includefn = function(fileSource, callback) {
+exports.includefn = function(filePath, fileSource, callback) {
   var includeRegExp = /\{\{\#include[\s]*\((.*?)\)[\s]*\}\}/gi,
     includeRegExp2 = /\{\{\#include[\s]*\((.*?)\)[\s]*\}\}/i,
     includeMatch = fileSource.match(includeRegExp);
   if (includeMatch) {
-    var fs = require('fs');
+    var fs = require('fs'),
+      url = require('url');
     function includeEach(){
       if (includeMatch.length) {
         var newIncludeMatch = includeMatch.shift(),
@@ -14,8 +15,15 @@ exports.includefn = function(fileSource, callback) {
           var includeListArray = includeList.split(',');
           for (var i=0; i<includeListArray.length; i++) {
             var includeFile = includeListArray[i].replace(/(^\s*)|(\s*$)/g, '');
+            if (includeFile.indexOf('/script/') == 0) {
+              includeFile = commonPath + '/script/' + includeFile;
+            } else if (includeFile.substr(0,1) == '/') {
+              includeFile = includeFile;
+            } else {
+              includeFile = url.resolve(filePath, includeFile);
+            }
             try{
-              var includeFileSource = fs.readFileSync(commonPath + '/script/' + includeFile, 'utf-8');
+              var includeFileSource = fs.readFileSync(includeFile, 'utf-8');
             } catch (e) {
               var includeFileSource = '// '+e;
             }
@@ -23,7 +31,7 @@ exports.includefn = function(fileSource, callback) {
           }
         }
         fileSource = fileSource.replace(newIncludeMatch, includeSource);
-        includeEach();       
+        includeEach();
       } else {
         callback(fileSource);
       }

@@ -12,7 +12,7 @@ exports.fn = function(req, res, pathname, ext) {
           res.end('{ERROR:404:' + pathname + '}');
         } else {
           var scriptMatch = require('./script_match');
-          scriptMatch.includefn(source, function(source){
+          scriptMatch.includefn(filePath, source, function(source){
             res.writeHead(200, {'Content-Type': 'text/javascript'});
             res.end(source);
           });

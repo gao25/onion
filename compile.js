@@ -110,14 +110,26 @@ exports.review = function(path, callback) {
   }
 };
 
-exports.publish = function(fileArray) {
+exports.publish = function(fileArray, pack) {
+  // pack == "pack" 表示打包
+
   var fs = require('fs'),
     publishIndex = 0,
     fileCount = fileArray.length;
+
+  if (pack == 'pack') {
+    var sqlite3 = require('sqlite3'),
+      filesDb = new sqlite3.Database(toPath + 'files.db');
+  } else {
+    var dateformat = require('./routes/dateformat'),
+      timestamp = dateformat.format('YYMMDDhhmmss');
+  }
+
   function publishFile(){
     if (fileArray.length) {
       publishIndex ++;
-      var filepath = fileArray.pop()['filepath'],
+      var popFile = fileArray.pop();
+        filepath = popFile['filepath'],
         fromFilePath = fromPath + filepath,
         toFilePath = toPath + filepath,
         ext = filepath.substr(filepath.lastIndexOf('.')+1);
@@ -125,24 +137,60 @@ exports.publish = function(fileArray) {
       var publishCallback = function(e){
         if (e) {
           console.log(publishIndex + '/' + fileCount + ' ...' + ' [publish] ... ' + filepath);
-          publishFile();
+          if (pack == 'pack') {
+            var sql = 'update files set state="publish" where id='+popFile['id'];
+            filesDb.run(sql, function (error) {
+              publishFile();
+            });
+          } else {
+            publishFile();
+          }
         } else {
           console.log(publishIndex + '/' + fileCount + ' ...' + ' [error] ... ' + filepath);
           publishFile();
         }
       }
 
-      if (filepath.indexOf('-min.') > 0 || filepath.indexOf('.min.') > 0) {
-        copyFile['static'](fromFilePath, toFilePath, publishCallback);
-      } else if (ext == 'juic' || ext == 'styl' || ext == 'css' || ext == 'js') {
-        copyFile[ext](fromFilePath, toFilePath, publishCallback);
-      } else if (ext == 'png' || ext == 'jpg' || ext == 'gif') {
-        copyFile['img'](fromFilePath, toFilePath, publishCallback);
+      var publishCall = function(){
+        if (filepath.indexOf('-min.') > 0 || filepath.indexOf('.min.') > 0) {
+          copyFile['static'](fromFilePath, toFilePath, publishCallback);
+        } else if (ext == 'juic' || ext == 'styl' || ext == 'css' || ext == 'js') {
+          copyFile[ext](fromFilePath, toFilePath, function (state, linkArray) {
+            if (state && pack == 'pack') {
+              // 保存文件关联
+              if (linkArray && linkArray.length) {
+                savelinkfn(popFile['id'], linkArray, function(){
+                  publishCallback(state);
+                })
+              } else {
+                publishCallback(state);
+              }
+            } else {
+              publishCallback(state);
+            }
+          });
+        } else if (ext == 'png' || ext == 'jpg' || ext == 'jpge' || ext == 'gif') {
+          copyFile['img'](fromFilePath, toFilePath, publishCallback);
+        } else {
+          copyFile['static'](fromFilePath, toFilePath, publishCallback);
+        }
+      }
+
+      if (pack == 'pack') {
+        // 清除文件关联
+        var sql = 'update links set state = "off" where fileid=' + popFile['id'];
+        filesDb.run(sql, function (error) {
+          publishCall();
+        });
       } else {
-        copyFile['static'](fromFilePath, toFilePath, publishCallback);
+        publishCall();
       }
     } else {
-      console.log('-- 文件发布完成 --');
+      if (pack == 'pack') {
+        console.log('-- 文件打包完成 --');
+      } else {
+        console.log('-- 文件发布完成 --');
+      }
     }
   }
 
@@ -160,15 +208,32 @@ exports.publish = function(fileArray) {
         if (error) {
           callback(false);
         } else {
+          var linkArray = [];
           toFilePath = toFilePath.replace('.juic', '.html');
-          screenMatch.modfn(source, function(source){
-            screenMatch.apifn(source, 'publish', function(source){
-              fs.writeFile(toFilePath, source, function (error) {
-                if (error) {
-                  callback(false);
-                } else {
-                  callback(true);
+          screenMatch.modfn(source, function (source, modArray) {
+            if (modArray && modArray.length) {
+              for (var i=0; i<modArray.length; i++) {
+                linkArray.push({
+                  'linkfilePath': modArray[i],
+                  'linktype': 'mod'
+                });
+              }
+            }
+            screenMatch.apifn(source, 'publish', function (source) {
+              timestampfn(fromFilePath, source, function (source, timestampArray) {
+                for (var i=0; i<timestampArray.length; i++) {
+                  linkArray.push({
+                    'linkfilePath': timestampArray[i],
+                    'linktype': 'timestamp'
+                  });
                 }
+                fs.writeFile(toFilePath, source, function (error) {
+                  if (error) {
+                    callback(false);
+                  } else {
+                    callback(true, linkArray);
+                  }
+                });
               });
             });
           });
@@ -180,6 +245,7 @@ exports.publish = function(fileArray) {
         if (error) {
           callback(false);
         } else {
+          var linkArray = [];
           toFilePath = toFilePath.replace('.styl', '.css');
           var stylusPaths = [
             commonPath,
@@ -191,20 +257,28 @@ exports.publish = function(fileArray) {
             if (err) {
               callback(false);
             } else {
-              fs.writeFile(toFilePath, source, function (error) {
-                if (error) {
-                  callback(false);
-                } else {
-                  var savePath = toFilePath.substr(0, toFilePath.lastIndexOf('/'));
-                  gulp.src(toFilePath)
-                    .pipe(minifyCss())
-                    .pipe(gulp.dest(savePath))
-                    .on('end', function(){
-                      callback(true);
-                    }).on('error', function(err) {
-                      callback(false);
-                    });
+              timestampfn(fromFilePath, source, function(source, timestampArray){
+                for (var i=0; i<timestampArray.length; i++) {
+                  linkArray.push({
+                    'linkfilePath': timestampArray[i],
+                    'linktype': 'timestamp'
+                  });
                 }
+                fs.writeFile(toFilePath, source, function (error) {
+                  if (error) {
+                    callback(false);
+                  } else {
+                    var savePath = toFilePath.substr(0, toFilePath.lastIndexOf('/'));
+                    gulp.src(toFilePath)
+                      .pipe(minifyCss())
+                      .pipe(gulp.dest(savePath))
+                      .on('end', function(){
+                        callback(true, linkArray);
+                      }).on('error', function(err) {
+                        callback(false);
+                      });
+                  }
+                });
               });
             }
           });
@@ -227,22 +301,30 @@ exports.publish = function(fileArray) {
         if (error) {
           callback(false);
         } else {
-          toFilePath = toFilePath.replace('.juic', '.html');
+          var linkArray = [];
           scriptMatch.includefn(source, function(source){
-            fs.writeFile(toFilePath, source, function (error) {
-              if (error) {
-                callback(false);
-              } else {
-                var savePath = toFilePath.substr(0, toFilePath.lastIndexOf('/'));
-                gulp.src(toFilePath)
-                  .pipe(uglifyJs())
-                  .pipe(gulp.dest(savePath))
-                  .on('end', function(){
-                    callback(true);
-                  }).on('error', function(err) {
-                    callback(false);
-                  });
+            timestampfn(fromFilePath, source, function(source, timestampArray){
+              for (var i=0; i<timestampArray.length; i++) {
+                linkArray.push({
+                  'linkfilePath': timestampArray[i],
+                  'linktype': 'timestamp'
+                });
               }
+              fs.writeFile(toFilePath, source, function (error) {
+                if (error) {
+                  callback(false);
+                } else {
+                  var savePath = toFilePath.substr(0, toFilePath.lastIndexOf('/'));
+                  gulp.src(toFilePath)
+                    .pipe(uglifyJs())
+                    .pipe(gulp.dest(savePath))
+                    .on('end', function(){
+                      callback(true, linkArray);
+                    }).on('error', function(err) {
+                      callback(false);
+                    });
+                }
+              });
             });
           });
         }
@@ -266,11 +348,89 @@ exports.publish = function(fileArray) {
     "static": function(fromFilePath, toFilePath, callback){
       // 通过文件流复制文件
       var readable = fs.createReadStream(fromFilePath),
-        writable = fs.createWriteStream(toFilePath);   
+        writable = fs.createWriteStream(toFilePath);
       readable.pipe(writable);
       callback(true);
     }
   };
 
+  
+  // 插入时间戳
+  var url = require('url');
+  function timestampfn(fromFilePath, fileSource, callback){
+    var tsRegExp = /[\'|\"|\(]([^\'\"\(]*?)\{\{\#timestamp\}\}([^\'\"\(]*?)[\'|\"|\)]/gi,
+      tsMatch = fileSource.match(tsRegExp),
+      timestampArray = [];
+    if (tsMatch) {
+      function eachTs(){
+        if (tsMatch.length) {
+          var thisTsMath = tsMatch.shift();
+          thisTsMath = thisTsMath.substr(1, thisTsMath.length-2);
+          if (pack == 'pack') {
+            var fileurl = thisTsMath.split('?')[0];
+            if (fileurl.substr(0,1) == '/') {
+              fileurl = fromFilePath.replace('./template/', '').split('/')[0] + fileurl;
+            } else {
+              fileurl = url.resolve(fromFilePath, fileurl).replace('template/', '');
+            }
+            var sql = 'select id,filepath,timestamp from files where fileurl="'+fileurl+'"';
+            filesDb.get(sql, function (error, response) {
+              if (response) {
+                var newTsMath = thisTsMath.replace('{{#timestamp}}' ,response['timestamp']);
+                timestampArray.push(response['filepath']);
+              } else {
+                var newTsMath = thisTsMath.replace('{{#timestamp}}' ,'undefined');
+              }
+              fileSource = fileSource.replace(thisTsMath, newTsMath);
+              eachTs();
+            });
+          } else {
+            var newTsMath = thisTsMath.replace('{{#timestamp}}' ,timestamp);
+            fileSource = fileSource.replace(thisTsMath, newTsMath);
+            eachTs();
+          }
+        } else {
+          callback(fileSource, timestampArray);
+        }
+      }
+      eachTs();
+    } else {
+      callback(fileSource, timestampArray);
+    }
+  }
+  // 保存文件关联
+  function savelinkfn(fileid, linkArray, callback){
+    function eachSavelinkfn(){
+      if (linkArray.length) {
+        var linkfile = linkArray.pop(),
+          linkfilePath = linkfile['linkfilePath'],
+          linktype = linkfile['linktype'];
+        var sql = 'select id from files where filepath="'+linkfilePath+'"';
+        filesDb.get(sql, function (error, response) {
+          if (response) {
+            var linkfileid = response['id'],
+              sql = 'select id from links where fileid='+fileid+' and linkfileid='+linkfileid;
+            filesDb.get(sql, function (error, response) {
+              if (response) {
+                var sql = 'update links set state="on" where id='+response['id'];
+              } else {
+                var sql = 'insert into links(fileid, linktype, linkfileid, state) values('+fileid+',"'+linktype+'",'+linkfileid+',"on")';
+              }
+              filesDb.run(sql, function (error) {
+                eachSavelinkfn();
+              });
+            });
+          } else {
+            eachSavelinkfn();
+          }
+        });
+      } else {
+        callback();
+      }
+    }
+    eachSavelinkfn();
+  }
+
   publishFile();
 };
+
