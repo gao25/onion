@@ -16,7 +16,7 @@ exports.includefn = function(filePath, fileSource, callback) {
           for (var i=0; i<includeListArray.length; i++) {
             var includeFile = includeListArray[i].replace(/(^\s*)|(\s*$)/g, '');
             if (includeFile.indexOf('/script/') == 0) {
-              includeFile = commonPath + '/script/' + includeFile;
+              includeFile = commonPath + includeFile;
             } else if (includeFile.substr(0,1) == '/') {
               includeFile = includeFile;
             } else {
