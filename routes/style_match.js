@@ -25,7 +25,17 @@ exports.fn = function (pathname, callback) {
                   if (err) {
                     callback('Stylus Error:\n'+err);
                   } else {
-                    callback(source);
+                    // autoprefixer
+                    var postcss = require('postcss'),
+                      autoprefixer = require('autoprefixer');
+                    postcss([autoprefixer]).process(source).then(function (result) {
+                      var source = '';
+                      result.warnings().forEach(function (warn) {
+                        source += '/* ' + warn.toString() + ' */\n';
+                      });
+                      source += result.css;
+                      callback(source);
+                    });                    
                   }
                 });
             }

@@ -5,12 +5,15 @@
   "devDependencies": {
     "juicer": "*",
     "stylus": "*",
+    "postcss": "*",
+    "autoprefixer": "*",
     "sprity": "*",
     "gulp": "*",
     "gulp-minify-css": "*",
     "gulp-uglify": "*",
     "gulp-imagemin": "*",
-    "imagemin-pngquant": "*"
+    "imagemin-pngquant": "*",
+    "sqlite3": "*"
   },
   "repository": {
     "type": "git",
