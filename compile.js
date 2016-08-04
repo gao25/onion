@@ -302,7 +302,7 @@ exports.publish = function(fileArray, pack) {
           callback(false);
         } else {
           var linkArray = [];
-          scriptMatch.includefn(source, function(source){
+          scriptMatch.includefn(fromFilePath, source, function(source){
             timestampfn(fromFilePath, source, function(source, timestampArray){
               for (var i=0; i<timestampArray.length; i++) {
                 linkArray.push({
