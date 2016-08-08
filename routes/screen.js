@@ -15,12 +15,30 @@ exports.fn = function(req, res, pathname, ext) {
           // mod 模块
           screenMatch.modfn(source, function(source){
             screenMatch.apifn(source, 'local', function(source){
+              // 设置时间戳
+              var dateformat = require('./dateformat'),
+                timestamp = dateformat.format('YYMMDDhhmmss');
+              source = source.replace(/\{\{\#timestamp\}\}/gi, timestamp);
+              // 获取模拟数据
               var fileDataPath = hostPath + pathname.replace('.html', '.data');
-              // 模拟数据
               fs.stat(fileDataPath, function (error, stats){
+                var juicer = require('juicer');
+                juicer.set({
+                  'tag::operationOpen': '{{@',
+                  'tag::operationClose': '}}',
+                  'tag::interpolateOpen': '${{',
+                  'tag::interpolateClose': '}}',
+                  'tag::noneencodeOpen': '$${{',
+                  'tag::noneencodeClose': '}}',
+                  'tag::commentOpen': '{{#',
+                  'tag::commentClose': '}}',
+                  'strip': false
+                });
+                var sourceData = {};
                 if (error) {
                   // 输出
                   res.writeHead(200, {'Content-Type': 'text/html'});
+                  source = juicer(source, sourceData);
                   res.end(source);
                 } else {
                   fs.readFile(fileDataPath, 'utf8', function (error, dataSource){
@@ -28,21 +46,9 @@ exports.fn = function(req, res, pathname, ext) {
                       // nonthing
                     } else {
                       // 数据写入页面
-                      var sourceData = JSON.parse(dataSource),
-                        juicer = require('juicer');
-                      juicer.set({
-                        'tag::operationOpen': '{{@',
-                        'tag::operationClose': '}}',
-                        'tag::interpolateOpen': '${{',
-                        'tag::interpolateClose': '}}',
-                        'tag::noneencodeOpen': '$${{',
-                        'tag::noneencodeClose': '}}',
-                        'tag::commentOpen': '{{#',
-                        'tag::commentClose': '}}',
-                        'strip': false
-                      });
-                      source = juicer(source, sourceData);
+                      sourceData = JSON.parse(dataSource);
                     }
+                    source = juicer(source, sourceData);
                     // 输出
                     res.writeHead(200, {'Content-Type': 'text/html'});
                     res.end(source);
