@@ -1,7 +1,8 @@
-var process = require('child_process');
+var fs = require('fs'),
+  process = require('child_process');
 function nodeStart(nodename, callback){
-  process.exec('forever stop start/'+nodename[0], function (error, stdout, stderr) {
-    process.exec('forever start start/'+nodename[0], function (error, stdout, stderr) {
+  process.exec('forever stop start/'+nodename[0]+'.js', function (error, stdout, stderr) {
+    process.exec('forever start start/'+nodename[0]+'.js', function (error, stdout, stderr) {
       if (error) {
         console.log('error：' + error);
       } else {
@@ -13,17 +14,38 @@ function nodeStart(nodename, callback){
 }
 
 var nodeList = [
-  ['action.js', '6801'],
-  ['system.js', '6802'],
-  ['project.js', '6803'],
-  ['static.js', '6804'],
-  ['orange.js', '6880']
+  ['onion_action', '6801'],
+  ['onion_system', '6802'],
+  ['onion_project', '6803'],
+  ['static', '6804'],
+  ['demo', '6805'],
+  ['test', '6870']
 ];
 
 function eachNode(){
   if (nodeList.length) {
     var nodeThis = nodeList.pop();
-    nodeStart(nodeThis, eachNode);
+    fs.exists('./start/'+nodeThis[0]+'.js', function (state) {
+      if (!state) {
+        var fileText = 'var onion = require("../onion");\nonion.fn("'+nodeThis[0]+'", "'+nodeThis[1]+'");';
+        fs.writeFile('./start/'+nodeThis[0]+'.js', fileText, 'utf8', function(){
+          nodeStart(nodeThis, eachNode);
+        });
+      } else {
+        nodeStart(nodeThis, eachNode);
+      }
+    });
   }
 }
-eachNode();
+// 创建 start template 文件夹
+fs.exists('./start', function (state) {
+  if (!state) {
+    fs.mkdirSync('./start');
+  }
+  fs.exists('./template', function (state) {
+    if (!state) {
+      fs.mkdirSync('./template');
+    }
+    eachNode();
+  });
+});
