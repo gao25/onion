@@ -118,7 +118,6 @@ function fileDbFn(fileArray, callback){
                 '"new"' +
               ')';
           }
-          console.log(saveSql);
           filesDb.run(saveSql, function (error) {
             if (error) {
               console.log('[error] '+file['filepath']+' 数据保存出错');
