@@ -1,3 +1,14 @@
+// 配置
+var nodeList = [
+  ['onion_action', '6801'],
+  ['onion_system', '6802'],
+  ['onion_project', '6803'],
+  ['static', '6804'],
+  ['demo', '6805'],
+  ['test', '6870'],
+  ['live-test', '6871']
+];
+
 var fs = require('fs'),
   process = require('child_process');
 function nodeStart(nodename, callback){
@@ -12,15 +23,6 @@ function nodeStart(nodename, callback){
     });
   });
 }
-
-var nodeList = [
-  ['onion_action', '6801'],
-  ['onion_system', '6802'],
-  ['onion_project', '6803'],
-  ['static', '6804'],
-  ['demo', '6805'],
-  ['test', '6870']
-];
 
 function eachNode(){
   if (nodeList.length) {
