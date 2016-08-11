@@ -125,6 +125,30 @@ exports.publish = function(fileArray, pack, packConf) {
       timestamp = dateformat.format('YYMMDDhhmmss');
   }
 
+  // 创建文件夹
+  function mkdirFn(basepath, filepath, callback) {
+    var filepathArray = filepath.split('/'),
+      nowBasepath = basepath + '/';
+    filepathArray.pop();
+    function eachpathFn(){
+      if (filepathArray.length) {
+        var thispath = filepathArray.shift();
+        if (thispath) {
+          nowBasepath += thispath + '/';
+        }
+        fs.exists(nowBasepath, function(state){
+          if (!state) {
+            fs.mkdirSync(nowBasepath);
+          }
+          eachpathFn();
+        });
+      } else {
+        callback();
+      }
+    }
+    eachpathFn();
+  }
+
   function publishFile(){
     if (fileArray.length) {
       publishIndex ++;
@@ -141,11 +165,23 @@ exports.publish = function(fileArray, pack, packConf) {
             // 更新到数据库
             var sql = 'update files set state="publish" where id='+popFile['id'];
             filesDb.run(sql, function (error) {
-              // 复制到主项目
+              // 复制源文件到主项目
               if (packConf && packConf['template']) {
-                var copyToPath = packConf['template'] + filepath.replace(packConf['name'], '');
-                copyFile['static'](fromFilePath, copyToPath, function () {
-                  publishFile();
+                var packConfPath = filepath.replace(packConf['name'], ''),
+                  copyToPath = packConf['template'] + packConfPath;
+                mkdirFn(packConf['template'], packConfPath, function(){
+                  copyFile['static'](fromFilePath, copyToPath, function () {
+                    // 复制打包文件到主项目
+                    if (packConf['pack']) {
+                      var packFilePath = toFilePath.replace('.juic','.html').replace('.styl','.css'),
+                        copyToPackPath = packConf['pack'] + packConfPath.replace('.juic','.html').replace('.styl','.css');
+                      mkdirFn(packConf['pack'], packConfPath, function(){
+                        copyFile['static'](packFilePath, copyToPackPath, function () {
+                          publishFile();
+                        });
+                      });
+                    }
+                  });
                 });
               } else {
                 publishFile();
