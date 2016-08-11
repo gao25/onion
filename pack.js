@@ -97,9 +97,9 @@ function fileDbFn(fileArray, callback){
           if (response) {
             if (response['filetime'] != file['filetime'] || response['filesize'] != file['filesize']) {
               if (response['state'] == 'new' || response['state'] == 'update') {
-                var saveSql = 'update files set filetime="'+file['filetime']+'", filesize="'+file['filesize']+'", timestamp="'+timestamp+'"';
+                var saveSql = 'update files set filetime="'+file['filetime']+'", filesize="'+file['filesize']+'", timestamp="'+timestamp+'" where id='+response['id'];
               } else {
-                var saveSql = 'update files set filetime="'+file['filetime']+'", filesize="'+file['filesize']+'", timestamp="'+timestamp+'", state="update"';
+                var saveSql = 'update files set filetime="'+file['filetime']+'", filesize="'+file['filesize']+'", timestamp="'+timestamp+'", state="update" where id='+response['id'];
               }
             } else {
               saveData();
@@ -118,6 +118,7 @@ function fileDbFn(fileArray, callback){
                 '"new"' +
               ')';
           }
+          console.log(saveSql);
           filesDb.run(saveSql, function (error) {
             if (error) {
               console.log('[error] '+file['filepath']+' 数据保存出错');
