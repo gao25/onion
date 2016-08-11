@@ -110,7 +110,7 @@ exports.review = function(path, callback) {
   }
 };
 
-exports.publish = function(fileArray, pack) {
+exports.publish = function(fileArray, pack, packConf) {
   // pack == "pack" 表示打包
 
   var fs = require('fs'),
@@ -138,9 +138,18 @@ exports.publish = function(fileArray, pack) {
         if (e) {
           console.log(publishIndex + '/' + fileCount + ' ...' + ' [publish] ... ' + filepath);
           if (pack == 'pack') {
+            // 更新到数据库
             var sql = 'update files set state="publish" where id='+popFile['id'];
             filesDb.run(sql, function (error) {
-              publishFile();
+              // 复制到主项目
+              if (packConf && packConf['template']) {
+                var copyToPath = packConf['template'] + filepath.replace(packConf['name'], '');
+                copyFile['static'](fromFilePath, copyToPath, function () {
+                  publishFile();
+                });
+              } else {
+                publishFile();
+              }
             });
           } else {
             publishFile();

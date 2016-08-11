@@ -46,6 +46,7 @@ fs.exists(toPath, function (state) {
     function publishPath(path){
       global.commonPath = __dirname + '/template/onion_common';
       global.hostPath = __dirname + '/template/' + path;
+      global.nowPath = path;
       // 获取到发布路径，开始分析路径
       compile.review(path, function(fileArray){
         if (fileArray) {
@@ -53,7 +54,26 @@ fs.exists(toPath, function (state) {
             fileDbFn(fileArray, function(pubfileArray){
               if (pubfileArray.length) {
                 console.log('-- 有 '+pubfileArray.length+' 个文件需要重新打包 --');
-                compile.publish(pubfileArray, 'pack');
+                // 查看是否需直接发布到主工程
+                var packConfPath = toPath + 'pack.conf';
+                fs.exists(packConfPath, function (state) {
+                  if (state) {
+                    fs.readFile(packConfPath, 'utf8', function (error, conf) {
+                      if (!error && conf) {
+                        var packConf = JSON.parse(conf);
+                        if (packConf[path]) {
+                          compile.publish(pubfileArray, 'pack', packConf[path]);
+                        } else {
+                          compile.publish(pubfileArray, 'pack');
+                        }
+                      } else {
+                        compile.publish(pubfileArray, 'pack');
+                      }
+                    });
+                  } else {
+                    compile.publish(pubfileArray, 'pack');
+                  }
+                });
               } else {
                 console.log('-- 无文件需要重新打包 --');
               }
@@ -136,7 +156,7 @@ function fileDbFn(fileArray, callback){
         });
       } else {
         // 获取有更新主文件
-        var selectfileSql = 'select * from files where state="new" or state="update"';
+        var selectfileSql = 'select * from files where (state="new" or state="update") and filepath like "'+nowPath+'/%"';
         filesDb.all(selectfileSql, function (error, response) {
           if (error) {
             console.log('[error] 数据获取出错');
