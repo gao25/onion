@@ -12,8 +12,7 @@
     "gulp-minify-css": "*",
     "gulp-uglify": "*",
     "gulp-imagemin": "*",
-    "imagemin-pngquant": "*",
-    "sqlite3": "*"
+    "imagemin-pngquant": "*"
   },
   "repository": {
     "type": "git",
