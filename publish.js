@@ -54,10 +54,14 @@ fs.exists(toPath, function (state) {
       compile.review(path, function(fileArray){
         if (fileArray) {
           // 存储输入的路径
-          var newPublishList = [];
+          var newPublishList = [],
+            maxI = 1;
           newPublishList.push(path);
           for (var i=0; i<publishList.length; i++) {
-            if (publishList[i] != path) newPublishList.push(publishList[i]);
+            if (maxI < 10 && publishList[i] != path) {
+              maxI++;
+              newPublishList.push(publishList[i]);
+            }
           }
           fs.writeFile(toPath+'publish.list', newPublishList.join(','), 'utf8', function(){
             if (fileArray.length) {
