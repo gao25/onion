@@ -25,7 +25,8 @@ exports.fn = function(req, res, pathname, ext) {
     'webm': 'video/webm',
     'flv': 'video/x-flv',
     'wmv': 'video/x-ms-wmv',
-    'avi': 'video/x-msvideo'
+    'avi': 'video/x-msvideo',
+    'swf': 'application/x-shockwave-flash'
   }
   // 解析显示
   var type = typeArray[ext] || 'application/octet-stream';
